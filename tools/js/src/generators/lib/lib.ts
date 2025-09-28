@@ -31,7 +31,7 @@ export async function libGenerator(
 
   const projectRoot = name;
 
-  // 1. Run the base Nx JS library generator with minimal settings
+  // Run the base Nx JS library generator with minimal settings
   const callbackAfterFilesUpdated = await jsLibGenerator(tree, {
     ...options,
     directory: projectRoot,
@@ -46,7 +46,7 @@ export async function libGenerator(
     setParserOptionsProject: false,
   });
 
-  // 2. Add project configuration with tsdown + utility targets
+  // Add project configuration with tsdown + utility targets
   addProjectConfiguration(tree, name, {
     root: projectRoot,
     projectType: 'library',
@@ -57,18 +57,12 @@ export async function libGenerator(
         options: {
           command: 'tsdown build',
         },
+        dependsOn: ['^install'],
       },
       dev: {
         executor: 'nx:run-commands',
         options: {
           command: 'tsdown watch',
-        },
-      },
-      clean: {
-        executor: 'nx:run-commands',
-        options: {
-          cwd: projectRoot,
-          commands: ['rimraf dist'],
         },
       },
       install: {
@@ -77,7 +71,6 @@ export async function libGenerator(
           cwd: projectRoot,
           commands: ['npm install --ignore-scripts'],
         },
-        dependsOn: ['^clean'],
       },
       'lint:fmt': {
         executor: 'nx:run-commands',
@@ -90,15 +83,11 @@ export async function libGenerator(
     },
   });
 
-  // 3. Generate extra template files (tsdown.config.ts, src/index.ts)
-  generateFiles(
-    tree,
-    path.join(import.meta.dirname, 'files'),
-    projectRoot,
-    options
-  );
+  // Generate extra template files (tsdown.config.ts, src/index.ts)
+  // eslint-disable-next-line unicorn/prefer-module
+  generateFiles(tree, path.join(__dirname, 'files'), projectRoot, options);
 
-  // 4. Update tsconfig.lib.json to enable absolute imports and verbatimModuleSyntax
+  // Update tsconfig.lib.json to enable absolute imports and verbatimModuleSyntax
   updateJson(tree, path.join(projectRoot, 'tsconfig.lib.json'), (json) => {
     json.compilerOptions ??= {};
     json.compilerOptions.paths ??= {};
@@ -107,7 +96,7 @@ export async function libGenerator(
     return json;
   });
 
-  // 5. Update package.json of the generated project
+  // Update package.json of the generated project
   updateJson(tree, path.join(projectRoot, 'package.json'), (json) => {
     if (publishable) {
       json.private = false;
@@ -118,14 +107,13 @@ export async function libGenerator(
     return json;
   });
 
-  // 6. Add devDependencies: tsdown + @types/node (always latest)
+  // Add devDependencies: tsdown + @types/node (always latest)
   addDependenciesToPackageJson(
     tree,
     {},
     {
       '@types/node': 'latest',
       tsdown: 'latest',
-      rimraf: 'latest',
     }
   );
 
