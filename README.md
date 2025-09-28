@@ -5,6 +5,10 @@
 
 <p align="center">⚡⚡⚡</p>
 
+<p align="center">
+  <img alt="CodeRabbitAI" src="https://img.shields.io/coderabbit/prs/github/knexe/knexe?utm_source=oss&utm_medium=github&utm_campaign=knexe%2Fknexe&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews">
+</p>
+
 ## Workspace Dependencies
 
 ### Required
