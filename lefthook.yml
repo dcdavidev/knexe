@@ -1,4 +1,4 @@
 commit-msg:
-  jobs:
-    - name: lint commit msg
+  commands:
+    lint-commit-msg:
       run: npx commitlint --verbose --edit {1}
