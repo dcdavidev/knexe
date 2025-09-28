@@ -7,7 +7,6 @@ import {
   generateFiles,
   type Tree,
   updateJson,
-  workspaceRoot,
 } from '@nx/devkit';
 import { libraryGenerator as jsLibGenerator } from '@nx/js';
 
@@ -31,7 +30,7 @@ export async function libGenerator(
   const { directory, name, publishable = false, ...options } = inputOptions;
 
   // Always resolve the project root relative to the Nx workspace root
-  const projectRoot = path.join(workspaceRoot, directory);
+  const projectRoot = path.join(tree.root, directory);
 
   const callbackAfterFilesUpdated = await jsLibGenerator(tree, {
     ...options,
