@@ -1,10 +1,13 @@
-import path from 'node:path';
+/* eslint-disable unicorn/prefer-module */
+import { join } from 'node:path';
 
 import {
   addDependenciesToPackageJson,
   addProjectConfiguration,
   formatFiles,
   generateFiles,
+  names,
+  readProjectConfiguration,
   type Tree,
   updateJson,
 } from '@nx/devkit';
@@ -29,12 +32,28 @@ export async function libGenerator(
 ) {
   const { directory, name, publishable = false, ...options } = inputOptions;
 
-  // Always resolve the project root relative to the Nx workspace root
-  const projectRoot = path.join(tree.root, directory);
+  /** Normalize the project name for filesystem usage */
+  const normalizedNames = names(name);
 
+  /** Relative project root inside the workspace */
+  const projectRoot = join(directory);
+
+  /** Absolute path for filesystem operations */
+  const absProjectRoot = join(tree.root, projectRoot);
+
+  // Ensure the project does not already exist
+  try {
+    readProjectConfiguration(tree, name);
+    throw new Error(`Project "${name}" already exists in Nx workspace`);
+  } catch {
+    // ok: project not found
+  }
+
+  // Run the base Nx JS library generator with minimal settings
   const callbackAfterFilesUpdated = await jsLibGenerator(tree, {
     ...options,
-    directory,
+    name: normalizedNames.fileName,
+    directory: projectRoot,
     bundler: 'none',
     linter: 'none',
     publishable: false,
@@ -46,10 +65,11 @@ export async function libGenerator(
     setParserOptionsProject: false,
   });
 
+  // Add Nx project configuration with custom build targets
   addProjectConfiguration(tree, name, {
-    root: directory,
+    root: projectRoot,
     projectType: 'library',
-    sourceRoot: `${directory}/src`,
+    sourceRoot: `${projectRoot}/src`,
     targets: {
       build: {
         executor: 'nx:run-commands',
@@ -67,14 +87,14 @@ export async function libGenerator(
       install: {
         executor: 'nx:run-commands',
         options: {
-          cwd: projectRoot,
+          cwd: absProjectRoot,
           commands: ['npm install --ignore-scripts'],
         },
       },
       'lint:fmt': {
         executor: 'nx:run-commands',
         options: {
-          cwd: projectRoot,
+          cwd: absProjectRoot,
           command: 'eslint --fix .',
         },
         dependsOn: ['^install'],
@@ -82,14 +102,15 @@ export async function libGenerator(
     },
   });
 
-  // eslint-disable-next-line unicorn/prefer-module
-  generateFiles(tree, path.join(__dirname, 'files'), directory, {
+  // Generate extra template files (tsdown.config.ts, src/index.ts)
+  generateFiles(tree, join(__dirname, 'files'), projectRoot, {
     tmpl: '',
     name,
     directory,
   });
 
-  updateJson(tree, path.join(directory, 'tsconfig.lib.json'), (json) => {
+  // Update tsconfig.lib.json to enable absolute imports and verbatimModuleSyntax
+  updateJson(tree, join(projectRoot, 'tsconfig.lib.json'), (json) => {
     json.compilerOptions ??= {};
     json.compilerOptions.paths ??= {};
     json.compilerOptions.paths['@/*'] = ['./src/*'];
@@ -97,7 +118,8 @@ export async function libGenerator(
     return json;
   });
 
-  updateJson(tree, path.join(directory, 'package.json'), (json) => {
+  // Update package.json of the generated project
+  updateJson(tree, join(projectRoot, 'package.json'), (json) => {
     json.name = `@knexe/${name}`;
     if (publishable) {
       json.private = false;
@@ -108,6 +130,7 @@ export async function libGenerator(
     return json;
   });
 
+  // Add devDependencies: tsdown + @types/node (always latest)
   addDependenciesToPackageJson(
     tree,
     {},
