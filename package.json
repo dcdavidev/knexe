@@ -2,14 +2,17 @@
   "name": "@knexe/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "commit": "cz"
+  },
   "private": true,
-  "dependencies": {},
   "devDependencies": {
     "@nx/js": "21.5.3",
     "@swc-node/register": "~1.9.1",
     "@swc/core": "~1.5.7",
     "@swc/helpers": "~0.5.11",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
     "nx": "21.5.3",
     "prettier": "^2.6.2",
     "tslib": "^2.3.0",
@@ -17,5 +20,10 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
 }
