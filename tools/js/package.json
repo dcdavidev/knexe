@@ -1,0 +1,96 @@
+{
+  "name": "@knexe/js",
+  "version": "0.0.1",
+  "private": true,
+  "description": "knexe custom nx js/ts plugin",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@knexe/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo",
+    "generators.json"
+  ],
+  "dependencies": {
+    "@nx/devkit": "21.5.3",
+    "@nx/js": "^21.5.3",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.9"
+  },
+  "generators": "./generators.json",
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/js:tsc",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "dependsOn": [
+          "install"
+        ],
+        "options": {
+          "outputPath": "tools/js/dist",
+          "main": "tools/js/src/index.ts",
+          "tsConfig": "tools/js/tsconfig.lib.json",
+          "rootDir": "tools/js/src",
+          "generatePackageJson": false,
+          "assets": [
+            {
+              "input": "./tools/js/src",
+              "glob": "**/!(*.ts)",
+              "output": "."
+            },
+            {
+              "input": "./tools/js/src",
+              "glob": "**/*.d.ts",
+              "output": "."
+            }
+          ]
+        }
+      },
+      "clean": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "tools/js",
+          "commands": [
+            "rimraf dist"
+          ]
+        }
+      },
+      "install": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "tools/js",
+          "commands": [
+            "npm install --ignore-scripts"
+          ]
+        },
+        "dependsOn": [
+          "^clean"
+        ]
+      },
+      "lint:fmt": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "tools/js",
+          "command": "eslint --fix ."
+        },
+        "dependsOn": [
+          "^install"
+        ]
+      }
+    }
+  }
+}

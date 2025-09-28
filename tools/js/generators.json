@@ -1,0 +1,9 @@
+{
+  "generators": {
+    "lib": {
+      "factory": "./dist/generators/lib/lib",
+      "schema": "./dist/generators/lib/schema.json",
+      "description": "knexe js/ts lib generator"
+    }
+  }
+}

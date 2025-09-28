@@ -20,7 +20,7 @@
 
 ```bash
 npm install --global
-  nx \
+nx \
   commitizen \
   prettier \
   eslint
@@ -28,6 +28,6 @@ npm install --global
 
 ## License
 
-**KNEXE** is licensed under the [MIT License](./LICENSE).
+**KNEXE** is licensed under the _MIT License_.
 
 <p align="center">⚡🫶⚡</p>
