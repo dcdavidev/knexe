@@ -2,6 +2,8 @@
   "plugins": [
     "prettier-plugin-sh",
     "prettier-plugin-toml",
+    "prettier-plugin-ini",
+    "prettier-plugin-properties",
     "prettier-plugin-prisma",
     "prettier-plugin-packagejson"
   ],
