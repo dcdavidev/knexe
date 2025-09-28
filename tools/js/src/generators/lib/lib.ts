@@ -10,6 +10,7 @@ import {
   readProjectConfiguration,
   type Tree,
   updateJson,
+  updateProjectConfiguration,
 } from '@nx/devkit';
 import { libraryGenerator as jsLibGenerator } from '@nx/js';
 
@@ -25,6 +26,9 @@ import type { LibGeneratorSchema } from './schema.d.ts';
  *  - add modern TypeScript settings,
  *  - optionally make the package publishable,
  *  - scaffold extra configuration files.
+ *
+ * If a project with the same name already exists in the Nx workspace,
+ * the configuration will be updated instead of failing.
  */
 export async function libGenerator(
   tree: Tree,
@@ -32,22 +36,14 @@ export async function libGenerator(
 ) {
   const { directory, name, publishable = false, ...options } = inputOptions;
 
-  /** Normalize the project name for filesystem usage */
+  /** Normalize the project name */
   const normalizedNames = names(name);
 
-  /** Relative project root inside the workspace */
+  /** Relative project root (used in Nx config) */
   const projectRoot = join(directory);
 
   /** Absolute path for filesystem operations */
   const absProjectRoot = join(tree.root, projectRoot);
-
-  // Ensure the project does not already exist
-  try {
-    readProjectConfiguration(tree, name);
-    throw new Error(`Project "${name}" already exists in Nx workspace`);
-  } catch {
-    // ok: project not found
-  }
 
   // Run the base Nx JS library generator with minimal settings
   const callbackAfterFilesUpdated = await jsLibGenerator(tree, {
@@ -65,10 +61,10 @@ export async function libGenerator(
     setParserOptionsProject: false,
   });
 
-  // Add Nx project configuration with custom build targets
-  addProjectConfiguration(tree, name, {
+  /** Project configuration object shared for add/update */
+  const projectConfig = {
     root: projectRoot,
-    projectType: 'library',
+    projectType: 'library' as const,
     sourceRoot: `${projectRoot}/src`,
     targets: {
       build: {
@@ -100,7 +96,15 @@ export async function libGenerator(
         dependsOn: ['^install'],
       },
     },
-  });
+  };
+
+  // Try to update config if project already exists
+  try {
+    readProjectConfiguration(tree, name);
+    updateProjectConfiguration(tree, name, projectConfig);
+  } catch {
+    addProjectConfiguration(tree, name, projectConfig);
+  }
 
   // Generate extra template files (tsdown.config.ts, src/index.ts)
   generateFiles(tree, join(__dirname, 'files'), projectRoot, {
