@@ -7,6 +7,7 @@ import {
   generateFiles,
   type Tree,
   updateJson,
+  workspaceRoot,
 } from '@nx/devkit';
 import { libraryGenerator as jsLibGenerator } from '@nx/js';
 
@@ -27,14 +28,14 @@ export async function libGenerator(
   tree: Tree,
   inputOptions: LibGeneratorSchema
 ) {
-  const { name, publishable = false, ...options } = inputOptions;
+  const { directory, name, publishable = false, ...options } = inputOptions;
 
-  const projectRoot = name;
+  // Always resolve the project root relative to the Nx workspace root
+  const projectRoot = path.join(workspaceRoot, directory);
 
-  // Run the base Nx JS library generator with minimal settings
   const callbackAfterFilesUpdated = await jsLibGenerator(tree, {
     ...options,
-    directory: projectRoot,
+    directory,
     bundler: 'none',
     linter: 'none',
     publishable: false,
@@ -46,11 +47,10 @@ export async function libGenerator(
     setParserOptionsProject: false,
   });
 
-  // Add project configuration with tsdown + utility targets
   addProjectConfiguration(tree, name, {
-    root: projectRoot,
+    root: directory,
     projectType: 'library',
-    sourceRoot: `${projectRoot}/src`,
+    sourceRoot: `${directory}/src`,
     targets: {
       build: {
         executor: 'nx:run-commands',
@@ -83,12 +83,14 @@ export async function libGenerator(
     },
   });
 
-  // Generate extra template files (tsdown.config.ts, src/index.ts)
   // eslint-disable-next-line unicorn/prefer-module
-  generateFiles(tree, path.join(__dirname, 'files'), projectRoot, options);
+  generateFiles(tree, path.join(__dirname, 'files'), directory, {
+    tmpl: '',
+    name,
+    directory,
+  });
 
-  // Update tsconfig.lib.json to enable absolute imports and verbatimModuleSyntax
-  updateJson(tree, path.join(projectRoot, 'tsconfig.lib.json'), (json) => {
+  updateJson(tree, path.join(directory, 'tsconfig.lib.json'), (json) => {
     json.compilerOptions ??= {};
     json.compilerOptions.paths ??= {};
     json.compilerOptions.paths['@/*'] = ['./src/*'];
@@ -96,8 +98,8 @@ export async function libGenerator(
     return json;
   });
 
-  // Update package.json of the generated project
-  updateJson(tree, path.join(projectRoot, 'package.json'), (json) => {
+  updateJson(tree, path.join(directory, 'package.json'), (json) => {
+    json.name = `@knexe/${name}`;
     if (publishable) {
       json.private = false;
       json.publishConfig = { access: 'public' };
@@ -107,7 +109,6 @@ export async function libGenerator(
     return json;
   });
 
-  // Add devDependencies: tsdown + @types/node (always latest)
   addDependenciesToPackageJson(
     tree,
     {},

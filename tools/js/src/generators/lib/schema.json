@@ -1,17 +1,22 @@
 {
   "$schema": "https://json-schema.org/schema",
   "$id": "Lib",
-  "title": "",
+  "title": "Knexe JS/TS library generator",
   "type": "object",
   "properties": {
-    "name": {
+    "directory": {
       "type": "string",
-      "description": "The name of the project",
+      "description": "The path where the project should be created",
       "$default": {
         "$source": "argv",
         "index": 0
       },
-      "x-prompt": "What name would you like to use?"
+      "x-prompt": "Where do you want to create the project? (e.g. devkit/datasource/psql)"
+    },
+    "name": {
+      "type": "string",
+      "description": "The Nx project name (used in package.json and nx.json)",
+      "x-prompt": "What name would you like to use? (e.g. datasource-psql)"
     },
     "publishable": {
       "type": "boolean",
@@ -20,5 +25,5 @@
       "x-prompt": "Do you want to publish this project?"
     }
   },
-  "required": ["name"]
+  "required": ["directory", "name"]
 }
