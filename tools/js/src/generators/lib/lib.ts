@@ -16,6 +16,8 @@ import { libraryGenerator as jsLibGenerator } from '@nx/js';
 
 import type { LibGeneratorSchema } from './schema.d.ts';
 
+import { getLatestVersion } from '@/helpers/get-latest-version.js';
+
 /**
  * Knexe custom Nx JS/TS library generator.
  *
@@ -40,7 +42,7 @@ export async function libGenerator(
   const normalizedNames = names(name);
 
   /** Relative project root (used in Nx config) */
-  const projectRoot = join(directory);
+  const projectRoot = directory ? join(directory) : normalizedNames.fileName;
 
   /** Absolute path for filesystem operations */
   const absProjectRoot = join(tree.root, projectRoot);
@@ -125,22 +127,32 @@ export async function libGenerator(
   // Update package.json of the generated project
   updateJson(tree, join(projectRoot, 'package.json'), (json) => {
     json.name = `@knexe/${name}`;
+    json.type = 'module';
+
+    json.files = ['LICENSE', 'dist', '!**/*.tsbuildinfo'];
+
     if (publishable) {
       json.private = false;
       json.publishConfig = { access: 'public' };
     } else {
       json.private = true;
     }
+
     return json;
   });
 
   // Add devDependencies: tsdown + @types/node (always latest)
+  const tsdownVersion = await getLatestVersion('tsdown');
+  const typesNodeVersion = await getLatestVersion('@types/node');
+  const rimrafVersion = await getLatestVersion('rimraf');
+
   addDependenciesToPackageJson(
     tree,
     {},
     {
-      '@types/node': 'latest',
-      tsdown: 'latest',
+      '@types/node': typesNodeVersion,
+      tsdown: tsdownVersion,
+      rimraf: rimrafVersion,
     }
   );
 
