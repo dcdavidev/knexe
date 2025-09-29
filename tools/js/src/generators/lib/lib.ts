@@ -14,9 +14,8 @@ import {
 } from '@nx/devkit';
 import { libraryGenerator as jsLibGenerator } from '@nx/js';
 
+import { getLatestVersion } from '../../helpers/get-latest-version.js';
 import type { LibGeneratorSchema } from './schema.d.ts';
-
-import { getLatestVersion } from '@/helpers/get-latest-version.js';
 
 /**
  * Knexe custom Nx JS/TS library generator.
@@ -118,8 +117,6 @@ export async function libGenerator(
   // Update tsconfig.lib.json to enable absolute imports and verbatimModuleSyntax
   updateJson(tree, join(projectRoot, 'tsconfig.lib.json'), (json) => {
     json.compilerOptions ??= {};
-    json.compilerOptions.paths ??= {};
-    json.compilerOptions.paths['@/*'] = ['./src/*'];
     json.compilerOptions.verbatimModuleSyntax = true;
     return json;
   });
